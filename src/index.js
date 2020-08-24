@@ -2,8 +2,15 @@ const express = require('express');
 const morgan = require('morgan');
 const exphbs = require('express-handlebars');
 const path = require('path');
+const flash = require('connect-flash');
+const session = require('express-session');
+const MYSQLStore = require('express-mysql-session');
+const passport = require('passport');
+const {database} = require('./keys');
+
 //inicializando 
 const app = express();
+require('./lib/passport');
 
 //configuracion
 app.set('port', process.env.PORT || 4000);
@@ -18,13 +25,22 @@ app.engine('.hbs',exphbs({
 app.set('view engine', '.hbs');
 
 //middlewares
+app.use(session({
+    secret: 'faztmysql-sesion',
+    resave: false,
+    saveUninitialized: false,
+    store: new MYSQLStore(database)
+}));
+app.use(flash());
 app.use(morgan('dev'));
 app.use(express.urlencoded({extended: false}));
 app.use(express.json());
+app.use(passport.initialize());
+app.use(passport.session());
 
 //variables globales
 app.use((req,res,next) => {
-
+    app.locals.success = req.flash('success');
     next();
 })
 
